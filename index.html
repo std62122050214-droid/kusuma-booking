@@ -120,8 +120,27 @@
                 </div>
         </div>
     </div>
-    
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script>
+        // Paste your Firebase config object here from Step 1
+        const firebaseConfig = {
+            apiKey: "AIzaSyDDY7uIvV8rh7MJITAibsiOMZcttTaCMXo",
+            authDomain: "kusuma-booking.firebaseapp.com",
+            databaseURL: "https://kusuma-booking-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "kusuma-booking",
+            storageBucket: "kusuma-booking.firebasestorage.app",
+            messagingSenderId: "237116351910",
+            appId: "1:237116351910:web:ace9e82ab57c76bdf95b67",
+            measurementId: "G-Z510RRPZG6"
+        };
+        
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        const roomsRef = database.ref('rooms');
+
         // Room configuration
         const roomConfig = {
             female: {
@@ -171,26 +190,13 @@
             }
         };
 
-        // Initialize booking data with localStorage for persistence
-        let bookingData = JSON.parse(localStorage.getItem('kusuma-bookings')) || {};
+        let bookingData = {};
 
-        // Real-time sync across tabs/browsers using storage events
-        window.addEventListener('storage', function(e) {
-            if (e.key === 'kusuma-bookings') {
-                bookingData = JSON.parse(e.newValue) || {};
-                renderAllRooms();
-            }
+        // Listen for real-time updates from Firebase
+        roomsRef.on('value', (snapshot) => {
+            bookingData = snapshot.val() || {};
+            renderAllRooms();
         });
-
-        // Save booking data
-        function saveBookingData() {
-            localStorage.setItem('kusuma-bookings', JSON.stringify(bookingData));
-            // Trigger storage event for same-origin tabs
-            window.dispatchEvent(new StorageEvent('storage', {
-                key: 'kusuma-bookings',
-                newValue: JSON.stringify(bookingData)
-            }));
-        }
 
         // Get room status
         function getRoomStatus(roomId) {
@@ -369,30 +375,39 @@
                 return;
             }
 
-            bookingData[roomId].push({
+            const newBookings = [...bookingData[roomId], {
                 employeeId: employeeId,
                 name: guestName,
                 timestamp: new Date().toISOString()
-            });
-
-            saveBookingData();
-            renderAllRooms();
-            closeModal();
+            }];
             
-            alert(`จองห้อง ${room.name} สำเร็จ!`);
+            // Save to Firebase
+            roomsRef.child(roomId).set(newBookings)
+                .then(() => {
+                    alert(`จองห้อง ${room.name} สำเร็จ!`);
+                    closeModal();
+                })
+                .catch(error => {
+                    console.error("Error writing to database: ", error);
+                    alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
+                });
         }
 
         // Remove booking
         function removeBooking(roomId, index) {
             if (confirm('ต้องการยกเลิกการจองนี้หรือไม่?')) {
-                bookingData[roomId].splice(index, 1);
-                if (bookingData[roomId].length === 0) {
-                    delete bookingData[roomId];
+                const newBookings = [...bookingData[roomId]];
+                newBookings.splice(index, 1);
+
+                // Update to Firebase
+                if (newBookings.length === 0) {
+                    roomsRef.child(roomId).remove();
+                } else {
+                    roomsRef.child(roomId).set(newBookings);
                 }
-                saveBookingData();
-                renderAllRooms();
+                
                 closeModal();
-                handleRoomClick(roomId); // Re-open modal to show updated list
+                alert('ยกเลิกการจองสำเร็จ!');
             }
         }
 
@@ -408,11 +423,6 @@
             if (e.target === this) {
                 closeModal();
             }
-        });
-
-        // Initialize the system
-        document.addEventListener('DOMContentLoaded', function() {
-            renderAllRooms();
         });
     </script>
 </body>
