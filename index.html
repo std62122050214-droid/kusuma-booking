@@ -70,30 +70,41 @@
 <script>
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyDDY7uIvV8rh7MJITAibsiOMZcttTaCMXo",
-  authDomain: "kusuma-booking.firebaseapp.com",
-  databaseURL: "https://kusuma-booking-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "kusuma-booking",
-  storageBucket: "kusuma-booking.firebasestorage.app",
-  messagingSenderId: "237116351910",
-  appId: "1:237116351910:web:ace9e82ab57c76bdf95b67",
-  measurementId: "G-Z510RRPZG6"
+    apiKey: "AIzaSyDDY7uIvV8rh7MJITAibsiOMZcttTaCMXo",
+    authDomain: "kusuma-booking.firebaseapp.com",
+    databaseURL: "https://kusuma-booking-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "kusuma-booking",
+    storageBucket: "kusuma-booking.firebasestorage.app",
+    messagingSenderId: "237116351910",
+    appId: "1:237116351910:web:ace9e82ab57c76bdf95b67",
+    measurementId: "G-Z510RRPZG6"
 };
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
-const auth = firebase.auth(); // ✨ เพิ่มตัวแปรสำหรับ Authentication
+const auth = firebase.auth();
 const roomsRef = db.ref("rooms");
 
 const roomsData = [
-    // ... (ข้อมูลห้องเหมือนเดิม)
+    // ผู้หญิง
+    {name:"บ้านเกาะใหญ่-หลัง1", capacity:2, gender:"female"}, {name:"บ้านเกาะใหญ่-หลัง2", capacity:4, gender:"female"}, {name:"บ้านเกาะใหญ่-หลัง3", capacity:3, gender:"female"},
+    {name:"บ้านอิงแก่ง-หลัง1", capacity:3, gender:"female"}, {name:"บ้านอิงแก่ง-หลัง2", capacity:3, gender:"female"}, {name:"บ้านอิงแก่ง-หลัง3", capacity:3, gender:"female"},
+    {name:"บ้านชมธาร-หลัง1", capacity:3, gender:"female"}, {name:"บ้านชมธาร-หลัง2", capacity:3, gender:"female"}, {name:"บ้านชมธาร-หลัง3", capacity:3, gender:"female"},
+    {name:"บ้านชมแก่ง", capacity:3, gender:"female"},
+    // ผู้ชาย
+    {name:"บ้านเนินทราย", capacity:2, gender:"male"},
+    {name:"A1", capacity:3, gender:"male"}, {name:"A2", capacity:3, gender:"male"}, {name:"A3", capacity:3, gender:"male"}, {name:"A4", capacity:3, gender:"male"},
+    {name:"A5", capacity:3, gender:"male"}, {name:"A6", capacity:3, gender:"male"}, {name:"A7", capacity:3, gender:"male"},
+    {name:"B10", capacity:2, gender:"male"}, {name:"B11", capacity:2, gender:"male"}, {name:"B12", capacity:2, gender:"male"},
+    {name:"B13", capacity:2, gender:"male"}, {name:"B14", capacity:2, gender:"male"},
+    {name:"บ้านเกาะเล็ก-หลัง1", capacity:3, gender:"male"}, {name:"บ้านเกาะเล็ก-หลัง2", capacity:3, gender:"male"},
 ];
 
 const femaleRoomsContainer = document.getElementById("femaleRoomsContainer");
 const maleRoomsContainer = document.getElementById("maleRoomsContainer");
 const modal = document.getElementById("detailsModal");
 
-// --- ✨ ส่วนจัดการล็อกอิน ---
+// --- ส่วนจัดการล็อกอิน ---
 let currentUser = null;
 const loginBtn = document.getElementById('login-btn');
 const logoutBtn = document.getElementById('logout-btn');
@@ -111,7 +122,6 @@ auth.onAuthStateChanged(user => {
         loginBtn.classList.remove('hidden');
         logoutBtn.classList.add('hidden');
     }
-    // เมื่อสถานะล็อกอินเปลี่ยน ให้วาด Modal ใหม่ (ถ้าเปิดอยู่) เผื่อปุ่มลบต้องแสดง/ซ่อน
     if (!modal.classList.contains('hidden')) {
         const roomName = document.getElementById('modalTitle').innerText;
         if (roomName) openDetailsModal(roomName);
@@ -128,11 +138,33 @@ logoutBtn.addEventListener('click', () => {
 });
 // --- สิ้นสุดส่วนจัดการล็อกอิน ---
 
-
 let currentBookings = {};
 
 function renderRooms(snapshot) {
-    // ... (ฟังก์ชันนี้เหมือนเดิมทุกประการ)
+    femaleRoomsContainer.innerHTML = "";
+    maleRoomsContainer.innerHTML = "";
+    currentBookings = snapshot.val() || {};
+
+    roomsData.forEach(room => {
+        const booked = currentBookings[room.name] || [];
+        const div = document.createElement("div");
+        div.className = "room-card";
+        div.dataset.name = room.name;
+
+        if (booked.length === 0) div.classList.add("available");
+        else if (booked.length < room.capacity) div.classList.add("partial");
+        else div.classList.add("full");
+        
+        if (booked.length >= room.capacity) {
+            div.innerHTML = `<h3 class="font-bold text-lg">${room.name}</h3><p class="font-semibold text-red-200 mt-1">ห้องนี้เต็มแล้ว</p>`;
+        } else {
+            div.innerHTML = `<h3 class="font-bold text-lg">${room.name}</h3><p class="font-medium">${booked.length} / ${room.capacity} คน</p>`;
+        }
+        
+        div.addEventListener("click", () => openDetailsModal(room.name));
+        if (room.gender === "female") femaleRoomsContainer.appendChild(div);
+        else maleRoomsContainer.appendChild(div);
+    });
 }
 
 function openDetailsModal(roomName) {
@@ -149,35 +181,49 @@ function openDetailsModal(roomName) {
             const li = document.createElement("div");
             li.className = "flex justify-between items-center p-2 bg-gray-100 rounded";
             
-            // --- ✨ ตรวจสอบเจ้าของเพื่อแสดงปุ่มลบ ---
             const isOwner = currentUser && currentUser.uid === person.ownerId;
             const deleteButtonHTML = isOwner ? `<button onclick="removeBooking('${roomName}', ${index})" class="text-red-500 hover:text-red-700 text-sm font-semibold">ลบ</button>` : '';
 
-            li.innerHTML = `<div>
-                              <span class="font-semibold text-gray-800">${person.name}</span>
-                              <span class="text-sm text-gray-500 ml-2">(${person.id})</span>
-                            </div>
-                            ${deleteButtonHTML}`;
+            li.innerHTML = `<div><span class="font-semibold text-gray-800">${person.name}</span><span class="text-sm text-gray-500 ml-2">(${person.id})</span></div>${deleteButtonHTML}`;
             bookedListEl.appendChild(li);
         });
     } else {
         bookedListEl.innerHTML = `<p class="text-gray-500 italic">ยังไม่มีผู้จองในห้องนี้</p>`;
     }
     
+    const bookingFormContainer = document.getElementById("bookingFormContainer");
+    const roomFullMessage = document.getElementById("roomFullMessage");
     const bookingForm = document.getElementById("bookingForm");
-    if (currentUser && bookings.length < room.capacity) {
-        // ... (ส่วนจัดการซ่อน/แสดงฟอร์มเหมือนเดิม)
-    } 
-    // ...
+
+    if (bookings.length < room.capacity) {
+        bookingFormContainer.style.display = "block";
+        bookingForm.style.display = "block";
+        roomFullMessage.style.display = "none";
+    } else {
+        bookingFormContainer.style.display = "block";
+        bookingForm.style.display = "none";
+        roomFullMessage.style.display = "block";
+    }
+    
+    bookingForm.onsubmit = (e) => {
+        e.preventDefault();
+        addBooking(roomName);
+    };
+
     modal.classList.remove("hidden");
 }
 
 function closeModal() {
-    // ... (เหมือนเดิม)
+    modal.classList.add("hidden");
+    document.getElementById("bookingForm").reset();
 }
 
 function isEmployeeAlreadyBooked(employeeId) {
-    // ... (เหมือนเดิม)
+    for (const roomName in currentBookings) {
+        const bookings = currentBookings[roomName];
+        if (bookings.some(person => person.id === employeeId)) return roomName;
+    }
+    return false;
 }
 
 function addBooking(roomName) {
@@ -188,31 +234,54 @@ function addBooking(roomName) {
 
     const id = document.getElementById("employeeId").value.trim();
     const name = document.getElementById("fullName").value.trim();
+
+    if (!id || !name) {
+        alert("กรุณากรอกข้อมูลให้ครบถ้วน");
+        return;
+    }
     
-    // ... (ส่วนตรวจสอบอื่นๆ เหมือนเดิม)
+    const previouslyBookedInRoom = isEmployeeAlreadyBooked(id);
+    if (previouslyBookedInRoom) {
+        alert(`รหัสพนักงาน ${id} ได้ทำการจองห้อง ${previouslyBookedInRoom} ไปแล้ว!`);
+        return;
+    }
 
     const roomRef = db.ref("rooms/" + roomName);
     roomRef.transaction(currentData => {
         const bookings = currentData || [];
         const room = roomsData.find(r => r.name === roomName);
         if (bookings.length < room.capacity) {
-            // --- ✨ เพิ่ม ID เจ้าของตอนจอง ---
             bookings.push({ id, name, ownerId: currentUser.uid });
             return bookings;
         } else {
+            alert("ขออภัย ห้องเต็มแล้วในระหว่างที่คุณกำลังจอง");
             return; 
+        }
+    }, (error, committed, snapshot) => {
+        if (error) alert("เกิดข้อผิดพลาด: " + error);
+        else if (committed) {
+            alert("จองห้องสำเร็จ!");
+            closeModal();
         }
     });
 }
 
 function removeBooking(roomName, index) {
-    // ... (ฟังก์ชันนี้เหมือนเดิมทุกประการ)
+    if (!confirm("คุณต้องการยกเลิกการจองนี้ใช่หรือไม่?")) return;
+
+    const roomRef = db.ref("rooms/" + roomName);
+    roomRef.transaction(currentData => {
+        if (currentData === null) return null;
+        currentData.splice(index, 1);
+        return currentData.length > 0 ? currentData : null; 
+    }, (error, committed, snapshot) => {
+        if (error) alert("เกิดข้อผิดพลาดในการยกเลิก: " + error);
+        else if (committed && !modal.classList.contains("hidden")) openDetailsModal(roomName);
+    });
 }
 
 roomsRef.on("value", renderRooms);
 modal.addEventListener('click', (e) => { if (e.target === e.currentTarget) closeModal(); });
-// (ผมได้รวมโค้ดบางส่วนให้สั้นลง แต่การทำงานเหมือนเดิมทุกประการครับ)
 </script>
 </body>
 </html>
-
