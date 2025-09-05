@@ -16,15 +16,20 @@
         .available { background: #10B981; } .partial { background: #F59E0B; } .full { background: #EF4444; }
         .modal-backdrop { backdrop-filter: blur(4px); }
         #logout-btn { background-color: #dc2626; color: white; padding: 8px 12px; border-radius: 8px; font-weight: 500;}
-        #login-btn { background-color: #1d4ed8; color: white; padding: 8px 12px; border-radius: 8px; font-weight: 500;}
+        #prompt-login-btn { background-color: #1d4ed8; color: white; padding: 10px 16px; border-radius: 8px; font-weight: 600;}
     </style>
 </head>
-<body>
+<body class="flex items-center justify-center min-h-screen">
 
-<div class="max-w-6xl mx-auto p-4 md:p-6">
+<div id="login-prompt" class="text-center p-8 bg-white rounded-xl shadow-lg">
+    <h1 class="text-2xl font-bold text-gray-800 mb-2">🌻 ยินดีต้อนรับสู่ระบบจองห้องพัก</h1>
+    <p class="text-gray-600 mb-6">กรุณาล็อกอินด้วยบัญชี Google เพื่อเข้าสู่ระบบ</p>
+    <button id="prompt-login-btn">ล็อกอินด้วย Google</button>
+</div>
+
+<div id="main-content" class="hidden max-w-6xl mx-auto p-4 md:p-6 w-full">
     <div class="text-right mb-4 p-2 bg-white/50 rounded-lg flex justify-end items-center gap-4">
         <span id="user-display" class="font-semibold text-gray-700"></span>
-        <button id="login-btn" class="hidden">ล็อกอินด้วย Google</button>
         <button id="logout-btn" class="hidden">ออกจากระบบ</button>
     </div>
 
@@ -63,6 +68,7 @@
         </div>
         <div id="roomFullMessage" class="hidden text-center p-4 bg-red-100 text-red-700 rounded-lg">
             <p class="font-semibold">ห้องนี้เต็มแล้ว</p>
+            <p class="text-sm">ไม่สามารถจองเพิ่มได้</p>
         </div>
     </div>
 </div>
@@ -100,12 +106,13 @@ const roomsData = [
     {name:"บ้านเกาะเล็ก-หลัง1", capacity:3, gender:"male"}, {name:"บ้านเกาะเล็ก-หลัง2", capacity:3, gender:"male"},
 ];
 
+const mainContent = document.getElementById('main-content');
+const loginPrompt = document.getElementById('login-prompt');
 const femaleRoomsContainer = document.getElementById("femaleRoomsContainer");
 const maleRoomsContainer = document.getElementById("maleRoomsContainer");
 const modal = document.getElementById("detailsModal");
 
 let currentUser = null;
-const loginBtn = document.getElementById('login-btn');
 const logoutBtn = document.getElementById('logout-btn');
 const userDisplay = document.getElementById('user-display');
 
@@ -113,13 +120,13 @@ auth.onAuthStateChanged(user => {
     if (user) {
         currentUser = user;
         userDisplay.innerText = `ล็อกอินเป็น: ${user.displayName || user.email}`;
-        loginBtn.classList.add('hidden');
         logoutBtn.classList.remove('hidden');
+        loginPrompt.classList.add('hidden');
+        mainContent.classList.remove('hidden');
     } else {
         currentUser = null;
-        userDisplay.innerText = 'กรุณาล็อกอินเพื่อทำการจอง';
-        loginBtn.classList.remove('hidden');
-        logoutBtn.classList.add('hidden');
+        mainContent.classList.add('hidden');
+        loginPrompt.classList.remove('hidden');
     }
     if (!modal.classList.contains('hidden')) {
         const roomName = document.getElementById('modalTitle').innerText;
@@ -127,11 +134,10 @@ auth.onAuthStateChanged(user => {
     }
 });
 
-loginBtn.addEventListener('click', () => {
-    const provider = new firebase.auth.GoogleAuthProvider();
+const provider = new firebase.auth.GoogleAuthProvider();
+document.getElementById('prompt-login-btn').addEventListener('click', () => {
     auth.signInWithPopup(provider);
 });
-
 logoutBtn.addEventListener('click', () => {
     auth.signOut();
 });
@@ -199,6 +205,8 @@ function openDetailsModal(roomName) {
         bookingFormContainer.classList.add("hidden");
         if (bookings.length >= room.capacity) {
             roomFullMessage.classList.remove("hidden");
+        } else {
+             roomFullMessage.classList.add("hidden");
         }
     }
     
