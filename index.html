@@ -46,7 +46,7 @@
         </div>
         <h3 class="font-semibold text-gray-700 mb-2" id="modalStatus"></h3>
         <div id="bookedList" class="space-y-2 mb-6 max-h-48 overflow-y-auto pr-2"></div>
-        <div id="bookingFormContainer">
+        <div id="bookingFormContainer" class="hidden">
              <hr class="mb-4">
             <h3 class="text-xl font-bold text-gray-800 mb-4">ลงชื่อจองห้องพัก</h3>
             <form id="bookingForm" class="space-y-4">
@@ -104,7 +104,6 @@ const femaleRoomsContainer = document.getElementById("femaleRoomsContainer");
 const maleRoomsContainer = document.getElementById("maleRoomsContainer");
 const modal = document.getElementById("detailsModal");
 
-// --- ส่วนจัดการล็อกอิน ---
 let currentUser = null;
 const loginBtn = document.getElementById('login-btn');
 const logoutBtn = document.getElementById('logout-btn');
@@ -136,7 +135,6 @@ loginBtn.addEventListener('click', () => {
 logoutBtn.addEventListener('click', () => {
     auth.signOut();
 });
-// --- สิ้นสุดส่วนจัดการล็อกอิน ---
 
 let currentBookings = {};
 
@@ -193,19 +191,18 @@ function openDetailsModal(roomName) {
     
     const bookingFormContainer = document.getElementById("bookingFormContainer");
     const roomFullMessage = document.getElementById("roomFullMessage");
-    const bookingForm = document.getElementById("bookingForm");
-
-    if (bookings.length < room.capacity) {
-        bookingFormContainer.style.display = "block";
-        bookingForm.style.display = "block";
-        roomFullMessage.style.display = "none";
+    
+    if (currentUser && bookings.length < room.capacity) {
+        bookingFormContainer.classList.remove("hidden");
+        roomFullMessage.classList.add("hidden");
     } else {
-        bookingFormContainer.style.display = "block";
-        bookingForm.style.display = "none";
-        roomFullMessage.style.display = "block";
+        bookingFormContainer.classList.add("hidden");
+        if (bookings.length >= room.capacity) {
+            roomFullMessage.classList.remove("hidden");
+        }
     }
     
-    bookingForm.onsubmit = (e) => {
+    document.getElementById("bookingForm").onsubmit = (e) => {
         e.preventDefault();
         addBooking(roomName);
     };
