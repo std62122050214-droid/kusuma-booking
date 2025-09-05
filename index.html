@@ -67,15 +67,16 @@
 </div>
 
 <script>
-// Your Firebase Config
+// 🔥 สำคัญ! นำ firebaseConfig ที่ถูกต้องของคุณมาวางที่นี่
 const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_AUTH_DOMAIN",
-    databaseURL: "YOUR_DATABASE_URL",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_STORAGE_BUCKET",
-    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-    appId: "YOUR_APP_ID"
+    apiKey: "AIzaSyDDY7uIvV8rh7MJITAibsiOMZcttTaCMXo",
+    authDomain: "kusuma-booking.firebaseapp.com",
+    databaseURL: "https://kusuma-booking-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "kusuma-booking",
+    storageBucket: "kusuma-booking.firebasestorage.app",
+    messagingSenderId: "237116351910",
+    appId: "1:237116351910:web:ace9e82ab57c76bdf95b67",
+    measurementId: "G-Z510RRPZG6"
 };
 
 firebase.initializeApp(firebaseConfig);
@@ -122,7 +123,7 @@ function renderRooms(snapshot) {
             div.classList.add("full");
         }
         
-        // --- ✨ จุดที่แก้ไข ✨ ---
+        // --- ส่วนที่ปรับปรุงให้แสดงข้อความเมื่อห้องเต็ม ---
         if (booked.length >= room.capacity) {
             div.innerHTML = `<h3 class="font-bold text-lg">${room.name}</h3>
                              <p class="font-semibold text-red-200 mt-1">ห้องนี้เต็มแล้ว</p>`;
@@ -164,16 +165,19 @@ function openDetailsModal(roomName) {
     
     const bookingFormContainer = document.getElementById("bookingFormContainer");
     const roomFullMessage = document.getElementById("roomFullMessage");
+    const bookingForm = document.getElementById("bookingForm");
+
     if (bookings.length < room.capacity) {
         bookingFormContainer.style.display = "block";
+        bookingForm.style.display = "block";
         roomFullMessage.style.display = "none";
     } else {
-        bookingFormContainer.style.display = "block"; // Keep the container block
-        document.getElementById("bookingForm").style.display = "none"; // Hide only the form
-        roomFullMessage.style.display = "block";
+        bookingFormContainer.style.display = "block"; // ยังคงแสดงกรอบสีเทา
+        bookingForm.style.display = "none"; // แต่ซ่อนฟอร์มสำหรับกรอกข้อมูล
+        roomFullMessage.style.display = "block"; // และแสดงข้อความว่าห้องเต็ม
     }
     
-    document.getElementById("bookingForm").onsubmit = (e) => {
+    bookingForm.onsubmit = (e) => {
         e.preventDefault();
         addBooking(roomName);
     };
@@ -183,16 +187,14 @@ function openDetailsModal(roomName) {
 
 function closeModal() {
     modal.classList.add("hidden");
-    const bookingForm = document.getElementById("bookingForm");
-    bookingForm.reset();
-    bookingForm.style.display = "block"; // Reset form visibility when closing modal
+    document.getElementById("bookingForm").reset();
 }
 
 function isEmployeeAlreadyBooked(employeeId) {
     for (const roomName in currentBookings) {
         const bookings = currentBookings[roomName];
         if (bookings.some(person => person.id === employeeId)) {
-            return roomName; // Return the room name where the employee is booked
+            return roomName; 
         }
     }
     return false;
@@ -222,7 +224,7 @@ function addBooking(roomName) {
             return bookings;
         } else {
             alert("ขออภัย ห้องเต็มแล้วในระหว่างที่คุณกำลังจอง");
-            return; // Abort transaction
+            return; 
         }
     }, (error, committed, snapshot) => {
         if (error) {
@@ -243,13 +245,11 @@ function removeBooking(roomName, index) {
     roomRef.transaction(currentData => {
         if (currentData === null) return null;
         currentData.splice(index, 1);
-        return currentData.length > 0 ? currentData : null; // If array is empty, remove the node
+        return currentData.length > 0 ? currentData : null; 
     }, (error, committed, snapshot) => {
         if (error) {
             alert("เกิดข้อผิดพลาดในการยกเลิก: " + error);
         } else if (committed) {
-            // The modal will re-render automatically by the main listener.
-            // We just need to refresh its content if it's currently open.
             if (!modal.classList.contains("hidden")) {
                 openDetailsModal(roomName);
             }
