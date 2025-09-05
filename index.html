@@ -1,3 +1,19 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌻 ระบบจองห้องพัก - ไร่กุสุมา 2568</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap');
+        body { font-family: 'Sarabun', sans-serif; background: linear-gradient(135deg, #FEF3C7 0%, #FCD34D 50%, #F59E0B 100%); }
+        .room-card { cursor:pointer; transition: 0.3s; padding:20px; border-radius:12px; color:white; text-align:center; }
+        .room-card:hover { transform: translateY(-2px); box-shadow:0 10px 25px rgba(0,0,0,0.1);}
+        .available { background: #10B981; } .partial { background: #F59E0B; } .full { background: #EF4444; }
         .modal-backdrop { backdrop-filter: blur(4px); }
         #logout-btn { background-color: #dc2626; color: white; padding: 8px 12px; border-radius: 8px; font-weight: 500;}
         #prompt-login-btn { background-color: #1d4ed8; color: white; padding: 10px 16px; border-radius: 8px; font-weight: 600;}
@@ -100,6 +116,18 @@ let currentUser = null;
 const logoutBtn = document.getElementById('logout-btn');
 const userDisplay = document.getElementById('user-display');
 
+// NEW: ตรวจจับการล็อกอินจากการ Redirect กลับมา
+auth.getRedirectResult()
+    .then((result) => {
+        if (result.user) {
+            console.log("Signed in successfully via redirect.", result.user);
+        }
+    }).catch((error) => {
+        console.error("Error during sign-in redirect:", error);
+        alert("เกิดข้อผิดพลาดในการล็อกอิน: " + error.message);
+    });
+
+// onAuthStateChanged ทำหน้าที่ควบคุมการแสดงผล UI เหมือนเดิม
 auth.onAuthStateChanged(user => {
     if (user) {
         currentUser = user;
@@ -118,9 +146,10 @@ auth.onAuthStateChanged(user => {
     }
 });
 
+// MODIFIED: เปลี่ยนวิธีการเรียกใช้ล็อกอิน
 const provider = new firebase.auth.GoogleAuthProvider();
 document.getElementById('prompt-login-btn').addEventListener('click', () => {
-    auth.signInWithPopup(provider);
+    auth.signInWithRedirect(provider); // <--- เปลี่ยนมาใช้ Redirect
 });
 logoutBtn.addEventListener('click', () => {
     auth.signOut();
@@ -199,7 +228,8 @@ function openDetailsModal(roomName) {
         addBooking(roomName);
     };
 
-    modal.classList.remove("
+    modal.classList.remove("hidden");
+}
 
 function closeModal() {
     modal.classList.add("hidden");
@@ -211,3 +241,65 @@ function isEmployeeAlreadyBooked(employeeId) {
         const bookings = currentBookings[roomName];
         if (bookings.some(person => person.id === employeeId)) return roomName;
     }
+    return false;
+}
+
+function addBooking(roomName) {
+    if (!currentUser) {
+        alert("กรุณาล็อกอินก่อนทำการจอง");
+        return;
+    }
+
+    const id = document.getElementById("employeeId").value.trim();
+    const name = document.getElementById("fullName").value.trim();
+
+    if (!id || !name) {
+        alert("กรุณากรอกข้อมูลให้ครบถ้วน");
+        return;
+    }
+    
+    const previouslyBookedInRoom = isEmployeeAlreadyBooked(id);
+    if (previouslyBookedInRoom) {
+        alert(`รหัสพนักงาน ${id} ได้ทำการจองห้อง ${previouslyBookedInRoom} ไปแล้ว!`);
+        return;
+    }
+
+    const roomRef = db.ref("rooms/" + roomName);
+    roomRef.transaction(currentData => {
+        const bookings = currentData || [];
+        const room = roomsData.find(r => r.name === roomName);
+        if (bookings.length < room.capacity) {
+            bookings.push({ id, name, ownerId: currentUser.uid });
+            return bookings;
+        } else {
+            alert("ขออภัย ห้องเต็มแล้วในระหว่างที่คุณกำลังจอง");
+            return; 
+        }
+    }, (error, committed, snapshot) => {
+        if (error) alert("เกิดข้อผิดพลาด: " + error);
+        else if (committed) {
+            alert("จองห้องสำเร็จ!");
+            closeModal();
+        }
+    });
+}
+
+function removeBooking(roomName, index) {
+    if (!confirm("คุณต้องการยกเลิกการจองนี้ใช่หรือไม่?")) return;
+
+    const roomRef = db.ref("rooms/" + roomName);
+    roomRef.transaction(currentData => {
+        if (currentData === null) return null;
+        currentData.splice(index, 1);
+        return currentData.length > 0 ? currentData : null; 
+    }, (error, committed, snapshot) => {
+        if (error) alert("เกิดข้อผิดพลาดในการยกเลิก: " + error);
+        else if (committed && !modal.classList.contains("hidden")) openDetailsModal(roomName);
+    });
+}
+
+roomsRef.on("value", renderRooms);
+modal.addEventListener('click', (e) => { if (e.target === e.currentTarget) closeModal(); });
+</script>
+</body>
+</html>
