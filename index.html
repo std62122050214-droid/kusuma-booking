@@ -67,16 +67,16 @@
 </div>
 
 <script>
-// 🔥 สำคัญ! นำ firebaseConfig ที่ถูกต้องของคุณมาวางที่นี่
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-    apiKey: "AIzaSyDDY7uIvV8rh7MJITAibsiOMZcttTaCMXo",
-    authDomain: "kusuma-booking.firebaseapp.com",
-    databaseURL: "https://kusuma-booking-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "kusuma-booking",
-    storageBucket: "kusuma-booking.firebasestorage.app",
-    messagingSenderId: "237116351910",
-    appId: "1:237116351910:web:ace9e82ab57c76bdf95b67",
-    measurementId: "G-Z510RRPZG6"
+  apiKey: "AIzaSyDDY7uIvV8rh7MJITAibsiOMZcttTaCMXo",
+  authDomain: "kusuma-booking.firebaseapp.com",
+  databaseURL: "https://kusuma-booking-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "kusuma-booking",
+  storageBucket: "kusuma-booking.firebasestorage.app",
+  messagingSenderId: "237116351910",
+  appId: "1:237116351910:web:ace9e82ab57c76bdf95b67",
+  measurementId: "G-Z510RRPZG6"
 };
 
 firebase.initializeApp(firebaseConfig);
@@ -123,7 +123,6 @@ function renderRooms(snapshot) {
             div.classList.add("full");
         }
         
-        // --- ส่วนที่ปรับปรุงให้แสดงข้อความเมื่อห้องเต็ม ---
         if (booked.length >= room.capacity) {
             div.innerHTML = `<h3 class="font-bold text-lg">${room.name}</h3>
                              <p class="font-semibold text-red-200 mt-1">ห้องนี้เต็มแล้ว</p>`;
@@ -172,9 +171,9 @@ function openDetailsModal(roomName) {
         bookingForm.style.display = "block";
         roomFullMessage.style.display = "none";
     } else {
-        bookingFormContainer.style.display = "block"; // ยังคงแสดงกรอบสีเทา
-        bookingForm.style.display = "none"; // แต่ซ่อนฟอร์มสำหรับกรอกข้อมูล
-        roomFullMessage.style.display = "block"; // และแสดงข้อความว่าห้องเต็ม
+        bookingFormContainer.style.display = "block";
+        bookingForm.style.display = "none";
+        roomFullMessage.style.display = "block";
     }
     
     bookingForm.onsubmit = (e) => {
