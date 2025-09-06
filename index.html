@@ -83,7 +83,7 @@ const firebaseConfig = {
     storageBucket: "kusuma-booking.firebasestorage.app",
     messagingSenderId: "237116351910",
     appId: "1:237116351910:web:ace9e82ab57c76bdf95b67",
-    measurementId: "G-Z510RRPZG6"
+    measurementId: "G-Z510RRPZG6",
 };
 
 firebase.initializeApp(firebaseConfig);
@@ -130,7 +130,8 @@ auth.onAuthStateChanged(user => {
 });
 
 function updateUIAfterLogin() {
-    userDisplay.innerText = ล็อกอินเป็น: ${currentUser.displayName || currentUser.email};
+    // แก้ไข: ใช้ backticks (``) เพื่อให้ template literal ทำงาน
+    userDisplay.innerText = `ล็อกอินเป็น: ${currentUser.displayName || currentUser.email}`;
     logoutBtn.classList.remove('hidden');
     loginPrompt.classList.add('hidden');
     mainContent.classList.remove('hidden');
@@ -187,9 +188,11 @@ function renderRooms(snapshot) {
         else div.classList.add("full");
         
         if (booked.length >= room.capacity) {
-            div.innerHTML = <h3 class="font-bold text-lg">${room.name}</h3><p class="font-semibold text-red-200 mt-1">ห้องนี้เต็มแล้ว</p>;
+            // แก้ไข: ใช้ backticks (``) เพื่อให้ template literal ทำงาน
+            div.innerHTML = `<h3 class="font-bold text-lg">${room.name}</h3><p class="font-semibold text-red-200 mt-1">ห้องนี้เต็มแล้ว</p>`;
         } else {
-            div.innerHTML = <h3 class="font-bold text-lg">${room.name}</h3><p class="font-medium">${booked.length} / ${room.capacity} คน</p>;
+            // แก้ไข: ใช้ backticks (``) เพื่อให้ template literal ทำงาน
+            div.innerHTML = `<h3 class="font-bold text-lg">${room.name}</h3><p class="font-medium">${booked.length} / ${room.capacity} คน</p>`;
         }
         
         div.addEventListener("click", () => openDetailsModal(room.name));
@@ -203,7 +206,8 @@ function openDetailsModal(roomName) {
     const bookings = currentBookings[roomName] || [];
     
     document.getElementById("modalTitle").innerText = room.name;
-    document.getElementById("modalStatus").innerText = รายชื่อผู้เข้าพัก (${bookings.length}/${room.capacity});
+    // แก้ไข: ใช้ backticks (``) เพื่อให้ template literal ทำงาน
+    document.getElementById("modalStatus").innerText = `รายชื่อผู้เข้าพัก (${bookings.length}/${room.capacity})`;
 
     const bookedListEl = document.getElementById("bookedList");
     bookedListEl.innerHTML = "";
@@ -211,7 +215,8 @@ function openDetailsModal(roomName) {
         bookings.forEach((person, index) => {
             const li = document.createElement("div");
             li.className = "flex justify-between items-center p-2 bg-gray-100 rounded";
-            li.innerHTML = <span>${person.fullName}</span>;
+            // แก้ไข: ใช้ backticks (``) เพื่อให้ template literal ทำงาน
+            li.innerHTML = `<span>${person.fullName}</span>`;
             bookedListEl.appendChild(li);
         });
     }
