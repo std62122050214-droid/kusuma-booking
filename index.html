@@ -222,6 +222,7 @@ function openDetailsModal(roomName) {
         bookings.forEach((person) => {
             const li = document.createElement("div");
             li.className = "flex justify-between items-center p-2 bg-gray-100 rounded";
+            // แก้ไขตรงนี้
             li.innerHTML = `<span>${person.fullName} (${person.employeeId})</span>`;
 
             // เพิ่มปุ่มยกเลิกการจอง ถ้าเป็นคนจองคนนั้น
