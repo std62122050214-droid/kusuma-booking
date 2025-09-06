@@ -11,6 +11,7 @@
         @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap');
         body { font-family: 'Sarabun', sans-serif; background: linear-gradient(135deg, #FEF3C7 0%, #FCD34D 50%, #F59E0B 100%); }
         .room-card { cursor:pointer; transition: 0.3s; padding:20px; border-radius:12px; color:white; text-align:center; }
+        .room-card:hover { transform: translateY(-2px); box-shadow:0 10px 25px rgba(0,0,0,0.1);}
         .available { background: #10B981; } .partial { background: #F59E0B; } .full { background: #EF4444; }
         .modal-backdrop { backdrop-filter: blur(4px); }
         .cancel-btn { background-color: #ef4444; color: white; font-weight: bold; }
@@ -21,7 +22,12 @@
 <div id="main-content" class="max-w-6xl mx-auto p-4 md:p-6 w-full">
     <h1 class="text-3xl font-bold mb-2 text-center text-gray-800">🌻 ระบบจองห้องพัก</h1>
     <p class="text-center mb-6 text-gray-700">กิจกรรมท่องเที่ยวประจำปี 2568 ณ ไร่กุสุมา</p>
-    <div id="rooms-container" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
+
+    <h2 class="text-2xl font-bold text-center mb-4 text-pink-700">ห้องพักสำหรับผู้หญิง</h2>
+    <div id="femaleRoomsContainer" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"></div>
+
+    <h2 class="text-2xl font-bold text-center mb-4 text-blue-700">ห้องพักสำหรับผู้ชาย</h2>
+    <div id="maleRoomsContainer" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
 </div>
 
 <div id="detailsModal" class="hidden fixed inset-0 bg-black bg-opacity-60 modal-backdrop flex items-center justify-center p-4 z-50">
@@ -51,17 +57,16 @@
 </div>
 
 <script>
-    // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyDDY7uIvV8rh7MJITAibsiOMZcttTaCMXo",
-  authDomain: "kusuma-booking.firebaseapp.com",
-  databaseURL: "https://kusuma-booking-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "kusuma-booking",
-  storageBucket: "kusuma-booking.firebasestorage.app",
-  messagingSenderId: "237116351910",
-  appId: "1:237116351910:web:ace9e82ab57c76bdf95b67",
-  measurementId: "G-Z510RRPZG6"
-};
+    // --- (สำคัญที่สุด) แก้ไขส่วนนี้ให้เป็น Config ของคุณ ---
+    const firebaseConfig = {
+        apiKey: "AIzaSyDDY7uIvV8rh7MJITAibsiOMZcttTaCMXo",
+        authDomain: "kusuma-booking.firebaseapp.com",
+        databaseURL: "https://kusuma-booking-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "kusuma-booking",
+        storageBucket: "kusuma-booking.appspot.com",
+        messagingSenderId: "237116351910",
+        appId: "1:237116351910:web:ace9e82ab57c76bdf95b67"
+    };
 
     // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
@@ -71,7 +76,7 @@ const firebaseConfig = {
     let currentBookings = {};
     let currentRoomName = null;
 
-        const roomsData = [
+    const roomsData = [
         {name:"บ้านเกาะใหญ่-หลัง1", capacity:2, gender:"female"}, {name:"บ้านเกาะใหญ่-หลัง2", capacity:4, gender:"female"}, {name:"บ้านเกาะใหญ่-หลัง3", capacity:3, gender:"female"},
         {name:"บ้านอิงแก่ง-หลัง1", capacity:3, gender:"female"}, {name:"บ้านอิงแก่ง-หลัง2", capacity:3, gender:"female"}, {name:"บ้านอิงแก่ง-หลัง3", capacity:3, gender:"female"},
         {name:"บ้านชมธาร-หลัง1", capacity:3, gender:"female"}, {name:"บ้านชมธาร-หลัง2", capacity:3, gender:"female"}, {name:"บ้านชมธาร-หลัง3", capacity:3, gender:"female"},
@@ -83,7 +88,8 @@ const firebaseConfig = {
         {name:"บ้านเกาะเล็ก-หลัง1", capacity:3, gender:"male"}, {name:"บ้านเกาะเล็ก-หลัง2", capacity:3, gender:"male"},
     ];
     
-    const roomsContainer = document.getElementById("rooms-container");
+    const femaleRoomsContainer = document.getElementById("femaleRoomsContainer");
+    const maleRoomsContainer = document.getElementById("maleRoomsContainer");
     const modal = document.getElementById("detailsModal");
 
     roomsRef.on("value", (snapshot) => {
@@ -92,7 +98,9 @@ const firebaseConfig = {
     });
 
     function renderRooms() {
-        roomsContainer.innerHTML = "";
+        femaleRoomsContainer.innerHTML = "";
+        maleRoomsContainer.innerHTML = "";
+        
         roomsData.forEach(room => {
             const bookings = currentBookings[room.name] ? Object.values(currentBookings[room.name]) : [];
             const div = document.createElement("div");
@@ -104,7 +112,12 @@ const firebaseConfig = {
             
             div.innerHTML = `<h3 class="font-bold text-lg">${room.name}</h3><p class="font-medium">${bookings.length} / ${room.capacity} คน</p>`;
             div.addEventListener("click", () => openDetailsModal(room.name));
-            roomsContainer.appendChild(div);
+
+            if (room.gender === "female") {
+                femaleRoomsContainer.appendChild(div);
+            } else {
+                maleRoomsContainer.appendChild(div);
+            }
         });
     }
 
@@ -123,7 +136,10 @@ const firebaseConfig = {
             Object.entries(currentBookings[roomName]).forEach(([key, person]) => {
                 const li = document.createElement("div");
                 li.className = "flex justify-between items-center p-2 bg-gray-100 rounded";
-                li.innerHTML = `<span>${person.fullName} (${person.employeeId})</span>`;
+                
+                // --- นี่คือบรรทัดที่แก้ไขแล้ว ---
+                li.innerHTML = `<span>${person.fullName}</span>`;
+
                 const cancelBtn = document.createElement("button");
                 cancelBtn.innerText = "ยกเลิก";
                 cancelBtn.className = "cancel-btn text-xs py-1 px-2 rounded-md";
@@ -141,15 +157,29 @@ const firebaseConfig = {
         const fullName = document.getElementById('fullName').value.trim();
         if (!employeeId || !fullName) return alert("กรุณากรอกข้อมูลให้ครบ");
         
+        let alreadyBooked = false;
+        for (const room in currentBookings) {
+            if (Object.values(currentBookings[room]).some(p => p.employeeId === employeeId)) {
+                alreadyBooked = true;
+                break;
+            }
+        }
+
+        if (alreadyBooked) {
+            alert("รหัสพนักงานนี้ได้ทำการจองไปแล้ว!");
+            return;
+        }
+
         db.ref(`rooms/${currentRoomName}`).push({ employeeId, fullName })
             .then(() => {
                 alert("จองห้องสำเร็จ!");
                 closeModal();
+                document.getElementById('bookingForm').reset();
             });
     });
 
     function cancelBooking(roomName, bookingKey, bookingEmployeeId) {
-        const inputId = prompt("เพื่อยืนยัน, กรุณากรอกรหัสพนักงาน:");
+        const inputId = prompt("เพื่อยืนยันการยกเลิก, กรุณากรอกรหัสพนักงานของคุณ:");
         if (inputId && inputId.trim() === bookingEmployeeId) {
             db.ref(`rooms/${roomName}/${bookingKey}`).remove()
                 .then(() => {
@@ -165,4 +195,3 @@ const firebaseConfig = {
 </script>
 </body>
 </html>
-
