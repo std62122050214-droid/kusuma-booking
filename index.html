@@ -15,15 +15,7 @@
         .available { background: #10B981; } .partial { background: #F59E0B; } .full { background: #EF4444; }
         .modal-backdrop { backdrop-filter: blur(4px); }
         .cancel-btn { background-color: #ef4444; color: white; font-weight: bold; }
-        /* CSS สำหรับจุดสี */
-        .color-dot {
-            display: inline-block;
-            width: 1rem; /* 16px */
-            height: 1rem; /* 16px */
-            border-radius: 9999px; /* ทำให้เป็นวงกลม */
-            margin-right: 0.5rem; /* 8px */
-            vertical-align: middle;
-        }
+        .color-dot { display: inline-block; width: 1rem; height: 1rem; border-radius: 9999px; margin-right: 0.5rem; vertical-align: middle; }
         .dot-green { background-color: #10B981; }
         .dot-yellow { background-color: #F59E0B; }
         .dot-red { background-color: #EF4444; }
@@ -36,18 +28,9 @@
     <p class="text-center mb-6 text-gray-700">กิจกรรมท่องเที่ยวประจำปี 2568 ณ ไร่กุสุมา</p>
     
     <div class="mb-8 p-4 bg-white/60 rounded-lg flex justify-center items-center gap-x-6 text-sm md:text-base shadow">
-        <div class="flex items-center font-medium text-gray-700">
-            <span class="color-dot dot-green"></span>
-            <span>ว่าง</span>
-        </div>
-        <div class="flex items-center font-medium text-gray-700">
-            <span class="color-dot dot-yellow"></span>
-            <span>สามารถจองเพิ่มได้</span>
-        </div>
-        <div class="flex items-center font-medium text-gray-700">
-            <span class="color-dot dot-red"></span>
-            <span>เต็ม</span>
-        </div>
+        <div class="flex items-center font-medium text-gray-700"><span class="color-dot dot-green"></span><span>ว่าง</span></div>
+        <div class="flex items-center font-medium text-gray-700"><span class="color-dot dot-yellow"></span><span>ลงชื่อได้อีกตามจำนวนที่เหลือ</span></div>
+        <div class="flex items-center font-medium text-gray-700"><span class="color-dot dot-red"></span><span>เต็ม</span></div>
     </div>
 
     <div class="text-center mb-8">
@@ -136,15 +119,19 @@ const firebaseConfig = {
         maleRoomsContainer.innerHTML = "";
         
         roomsData.forEach(room => {
-            const bookings = currentBookings[room.name] ? Object.values(currentBookings[room.name]) : [];
+            const bookingsInRoom = currentBookings[room.name] || {};
+            // --- NEW: นับเฉพาะการจองที่ยัง Active อยู่ ---
+            const activeBookings = Object.values(bookingsInRoom).filter(b => b.status === 'active');
+            const bookingsCount = activeBookings.length;
+            
             const div = document.createElement("div");
             div.className = "room-card";
             div.dataset.name = room.name;
 
-            let statusClass = bookings.length >= room.capacity ? 'full' : (bookings.length > 0 ? 'partial' : 'available');
+            let statusClass = bookingsCount >= room.capacity ? 'full' : (bookingsCount > 0 ? 'partial' : 'available');
             div.classList.add(statusClass);
             
-            div.innerHTML = `<h3 class="font-bold text-lg">${room.name}</h3><p class="font-medium">${bookings.length} / ${room.capacity} คน</p>`;
+            div.innerHTML = `<h3 class="font-bold text-lg">${room.name}</h3><p class="font-medium">${bookingsCount} / ${room.capacity} คน</p>`;
             div.addEventListener("click", () => openDetailsModal(room.name));
 
             if (room.gender === "female") {
@@ -158,25 +145,36 @@ const firebaseConfig = {
     function openDetailsModal(roomName) {
         currentRoomName = roomName;
         const room = roomsData.find(r => r.name === roomName);
-        const bookings = currentBookings[roomName] ? Object.values(currentBookings[roomName]) : [];
+        const bookingsInRoom = currentBookings[roomName] || {};
+        // --- NEW: นับและกรองเฉพาะการจองที่ยัง Active ---
+        const activeBookings = Object.values(bookingsInRoom).filter(b => b.status === 'active');
+        const bookingsCount = activeBookings.length;
         
         document.getElementById("modalTitle").innerText = room.name;
-        document.getElementById("modalStatus").innerText = `รายชื่อผู้เข้าพัก (${bookings.length}/${room.capacity})`;
-        document.getElementById("bookingFormContainer").classList.toggle("hidden", bookings.length >= room.capacity);
+        document.getElementById("modalStatus").innerText = `รายชื่อผู้เข้าพัก (${bookingsCount}/${room.capacity})`;
+        document.getElementById("bookingFormContainer").classList.toggle("hidden", bookingsCount >= room.capacity);
 
         const bookedListEl = document.getElementById("bookedList");
         bookedListEl.innerHTML = "";
-        if (bookings.length > 0) {
-            Object.entries(currentBookings[roomName]).forEach(([key, person]) => {
-                const li = document.createElement("div");
-                li.className = "flex justify-between items-center p-2 bg-gray-100 rounded";
-                li.innerHTML = `<span>${person.fullName}</span>`;
-                const cancelBtn = document.createElement("button");
-                cancelBtn.innerText = "ยกเลิก";
-                cancelBtn.className = "cancel-btn text-xs py-1 px-2 rounded-md";
-                cancelBtn.onclick = () => cancelBooking(roomName, key, person.employeeId);
-                li.appendChild(cancelBtn);
-                bookedListEl.appendChild(li);
+
+        if (bookingsCount > 0) {
+            Object.entries(bookingsInRoom).forEach(([key, person]) => {
+                // --- NEW: แสดงเฉพาะคนที่ยังจองอยู่ (active) ---
+                if (person.status === 'active') {
+                    const li = document.createElement("div");
+                    li.className = "flex justify-between items-center p-2 bg-gray-100 rounded";
+                    
+                    // --- NEW: แสดงเวลาที่จอง ---
+                    const bookingDate = new Date(person.bookingTimestamp).toLocaleString('th-TH');
+                    li.innerHTML = `<span>${person.fullName} <em class="text-xs text-gray-500">(${bookingDate})</em></span>`;
+
+                    const cancelBtn = document.createElement("button");
+                    cancelBtn.innerText = "ยกเลิก";
+                    cancelBtn.className = "cancel-btn text-xs py-1 px-2 rounded-md";
+                    cancelBtn.onclick = () => cancelBooking(roomName, key, person.employeeId);
+                    li.appendChild(cancelBtn);
+                    bookedListEl.appendChild(li);
+                }
             });
         }
         modal.classList.remove("hidden");
@@ -189,8 +187,9 @@ const firebaseConfig = {
         if (!employeeId || !fullName) return alert("กรุณากรอกข้อมูลให้ครบ");
         
         let alreadyBooked = false;
-        for (const room in currentBookings) {
-            if (Object.values(currentBookings[room]).some(p => p.employeeId === employeeId)) {
+        for (const roomName in currentBookings) {
+            const activeBookings = Object.values(currentBookings[roomName]).filter(b => b.status === 'active');
+            if (activeBookings.some(p => p.employeeId === employeeId)) {
                 alreadyBooked = true;
                 break;
             }
@@ -201,7 +200,15 @@ const firebaseConfig = {
             return;
         }
 
-        db.ref(`rooms/${currentRoomName}`).push({ employeeId, fullName })
+        // --- NEW: เพิ่มสถานะและเวลาตอนจอง ---
+        const newBooking = {
+            employeeId: employeeId,
+            fullName: fullName,
+            status: 'active', // 'active' หมายถึง ยังจองอยู่
+            bookingTimestamp: firebase.database.ServerValue.TIMESTAMP
+        };
+
+        db.ref(`rooms/${currentRoomName}`).push(newBooking)
             .then(() => {
                 alert("จองห้องสำเร็จ!");
                 closeModal();
@@ -212,7 +219,15 @@ const firebaseConfig = {
     function cancelBooking(roomName, bookingKey, bookingEmployeeId) {
         const inputId = prompt("เพื่อยืนยันการยกเลิก, กรุณากรอกรหัสพนักงานของคุณ:");
         if (inputId && inputId.trim() === bookingEmployeeId) {
-            db.ref(`rooms/${roomName}/${bookingKey}`).remove()
+            
+            // --- NEW: เปลี่ยนจากการลบเป็นการอัปเดตสถานะ ---
+            const updates = {
+                status: 'canceled', //เปลี่ยนสถานะเป็น 'ถูกยกเลิก'
+                canceledBy: inputId.trim(), //บันทึกว่าใครเป็นคนยกเลิก
+                cancellationTimestamp: firebase.database.ServerValue.TIMESTAMP //บันทึกเวลายกเลิก
+            };
+
+            db.ref(`rooms/${roomName}/${bookingKey}`).update(updates)
                 .then(() => {
                     alert("ยกเลิกการจองสำเร็จ");
                     closeModal();
@@ -227,23 +242,20 @@ const firebaseConfig = {
     const checkStatusBtn = document.getElementById('checkStatusBtn');
     checkStatusBtn.addEventListener('click', () => {
         const inputId = prompt("กรุณากรอกรหัสพนักงานเพื่อตรวจสอบสถานะการจอง:");
-        if (!inputId || inputId.trim() === "") {
-            return; 
-        }
+        if (!inputId || inputId.trim() === "") { return; }
 
         let bookingFound = false;
         for (const roomName in currentBookings) {
             for (const key in currentBookings[roomName]) {
                 const booking = currentBookings[roomName][key];
-                if (booking.employeeId === inputId.trim()) {
-                    alert(`พบข้อมูลการจองของคุณ:\n\nห้อง: ${roomName}\nชื่อ-นามสกุล: ${booking.fullName}\nรหัสพนักงาน: ${booking.employeeId}`);
+                if (booking.employeeId === inputId.trim() && booking.status === 'active') {
+                    const bookingDate = new Date(booking.bookingTimestamp).toLocaleString('th-TH');
+                    alert(`พบข้อมูลการจองของคุณ:\n\nห้อง: ${roomName}\nชื่อ-นามสกุล: ${booking.fullName}\nเวลาที่จอง: ${bookingDate}`);
                     bookingFound = true;
                     break; 
                 }
             }
-            if (bookingFound) {
-                break;
-            }
+            if (bookingFound) { break; }
         }
 
         if (!bookingFound) {
