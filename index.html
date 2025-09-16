@@ -1,260 +1,267 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🌻 ระบบจองห้องพัก - ไร่กุสุมา 2568</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap');
-        body { font-family: 'Sarabun', sans-serif; background: linear-gradient(135deg, #FEF3C7 0%, #FCD34D 50%, #F59E0B 100%); }
-        .room-card { cursor:pointer; transition: 0.3s; padding:20px; border-radius:12px; color:white; text-align:center; }
-        .room-card:hover { transform: translateY(-2px); box-shadow:0 10px 25px rgba(0,0,0,0.1);}
-        .available { background: #10B981; } .partial { background: #F59E0B; } .full { background: #EF4444; }
-        .modal-backdrop { backdrop-filter: blur(4px); }
-        .cancel-btn { background-color: #ef4444; color: white; font-weight: bold; }
-        .color-dot { display: inline-block; width: 1rem; height: 1rem; border-radius: 9999px; margin-right: 0.5rem; vertical-align: middle; }
-        .dot-green { background-color: #10B981; }
-        .dot-yellow { background-color: #F59E0B; }
-        .dot-red { background-color: #EF4444; }
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌻 ระบบจองห้องพัก - ไร่กุสุมา 2568</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap');
+        body { font-family: 'Sarabun', sans-serif; background: linear-gradient(135deg, #FEF3C7 0%, #FCD34D 50%, #F59E0B 100%); }
+        .room-card { cursor:pointer; transition: 0.3s; padding:20px; border-radius:12px; color:white; text-align:center; }
+        .room-card:hover { transform: translateY(-2px); box-shadow:0 10px 25px rgba(0,0,0,0.1);}
+        .available { background: #10B981; } .partial { background: #F59E0B; } .full { background: #EF4444; }
+        .modal-backdrop { backdrop-filter: blur(4px); }
+        .cancel-btn { background-color: #ef4444; color: white; font-weight: bold; }
+        .color-dot { display: inline-block; width: 1rem; height: 1rem; border-radius: 9999px; margin-right: 0.5rem; vertical-align: middle; }
+        .dot-green { background-color: #10B981; }
+        .dot-yellow { background-color: #F59E0B; }
+        .dot-red { background-color: #EF4444; }
+
+        /* Styles for print report */
+        @media print {
+            body { background: none; } /* Remove background gradient for print */
+            .main-container, .modal-backdrop, .modal-content { display: none; } /* Hide main content and modal for print */
+            .print-report-container { display: block !important; } /* Show print report container */
+        }
+    </style>
 </head>
 <body class="flex items-center justify-center min-h-screen p-4">
 
 <div id="main-content" class="max-w-6xl mx-auto w-full">
-    <h1 class="text-3xl font-bold mb-2 text-center text-gray-800">🌻 ระบบจองห้องพัก</h1>
-    <p class="text-center mb-6 text-gray-700">กิจกรรมท่องเที่ยวประจำปี 2568 ณ ไร่กุสุมา</p>
-    
-    <div class="mb-8 p-4 bg-white/60 rounded-lg flex justify-center items-center gap-x-6 text-sm md:text-base shadow">
-        <div class="flex items-center font-medium text-gray-700"><span class="color-dot dot-green"></span><span>ว่าง</span></div>
-        <div class="flex items-center font-medium text-gray-700"><span class="color-dot dot-yellow"></span><span>ลงเพิ่มได้</span></div>
-        <div class="flex items-center font-medium text-gray-700"><span class="color-dot dot-red"></span><span>เต็ม</span></div>
-    </div>
+    <h1 class="text-3xl font-bold mb-2 text-center text-gray-800">🌻 ระบบจองห้องพัก</h1>
+    <p class="text-center mb-6 text-gray-700">กิจกรรมท่องเที่ยวประจำปี 2568 ณ ไร่กุสุมา</p>
+    
+    <div class="mb-8 p-4 bg-white/60 rounded-lg flex flex-wrap justify-center items-center gap-x-6 gap-y-2 text-sm md:text-base shadow">
+        <div class="flex items-center font-medium text-gray-700"><span class="color-dot dot-green"></span><span>ว่าง</span></div>
+        <div class="flex items-center font-medium text-gray-700"><span class="color-dot dot-yellow"></span><span>ลงเพิ่มได้</span></div>
+        <div class="flex items-center font-medium text-gray-700"><span class="color-dot dot-red"></span><span>เต็ม</span></div>
+    </div>
 
-    <div class="text-center mb-8">
-        <button id="checkStatusBtn" class="bg-blue-600 text-white font-bold py-2 px-5 rounded-lg shadow-md hover:bg-blue-700 transition">
-            ตรวจสอบสถานะการจองของฉัน
-        </button>
+    <div class="text-center mb-8 flex flex-wrap justify-center gap-4">
+        <button id="checkStatusBtn" class="bg-blue-600 text-white font-bold py-2 px-5 rounded-lg shadow-md hover:bg-blue-700 transition">
+            ตรวจสอบสถานะการจองของฉัน
+        </button>
         <button id="printAllBtn" class="bg-purple-600 text-white font-bold py-2 px-5 rounded-lg shadow-md hover:bg-purple-700 transition">
             พิมพ์รายงานทั้งหมด
         </button>
-    </div>
+    </div>
 
-    <h2 class="text-2xl font-bold text-center mb-4 text-pink-700">ห้องพักสำหรับผู้หญิง</h2>
-    <div id="femaleRoomsContainer" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"></div>
+    <h2 class="text-2xl font-bold text-center mb-4 text-pink-700">ห้องพักสำหรับผู้หญิง</h2>
+    <div id="femaleRoomsContainer" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"></div>
 
-    <h2 class="text-2xl font-bold text-center mb-4 text-blue-700">ห้องพักสำหรับผู้ชาย</h2>
-    <div id="maleRoomsContainer" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
+    <h2 class="text-2xl font-bold text-center mb-4 text-blue-700">ห้องพักสำหรับผู้ชาย</h2>
+    <div id="maleRoomsContainer" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
 </div>
 
 <div id="detailsModal" class="hidden fixed inset-0 bg-black bg-opacity-60 modal-backdrop flex items-center justify-center p-4 z-50">
-    <div class="bg-white p-6 rounded-xl shadow-lg max-w-md w-full">
-        <div class="flex justify-between items-center mb-4">
-            <h2 class="text-2xl font-bold text-gray-800" id="modalTitle"></h2>
-            <button onclick="closeModal()" class="text-gray-400 hover:text-gray-800 text-3xl font-light">&times;</button>
-        </div>
-        <h3 class="font-semibold text-gray-700 mb-2" id="modalStatus"></h3>
-        <div id="bookedList" class="space-y-2 mb-6 max-h-48 overflow-y-auto pr-2"></div>
-        <div id="bookingFormContainer" class="hidden">
-             <hr class="mb-4">
-            <h3 class="text-xl font-bold text-gray-800 mb-4">ลงชื่อจองห้องพัก</h3>
-            <form id="bookingForm" class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-600">รหัสพนักงาน</label>
-                    <input type="text" id="employeeId" class="mt-1 w-full border-gray-300 px-3 py-2 rounded-md shadow-sm" required>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-600">ชื่อ-นามสกุล</label>
-                    <input type="text" id="fullName" class="mt-1 w-full border-gray-300 px-3 py-2 rounded-md shadow-sm" required>
-                </div>
-                <button type="submit" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-lg">ยืนยันการจอง</button>
-            </form>
-        </div>
-    </div>
+    <div class="bg-white p-6 rounded-xl shadow-lg max-w-md w-full">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-2xl font-bold text-gray-800" id="modalTitle"></h2>
+            <button onclick="closeModal()" class="text-gray-400 hover:text-gray-800 text-3xl font-light">&times;</button>
+        </div>
+        <h3 class="font-semibold text-gray-700 mb-2" id="modalStatus"></h3>
+        <div id="bookedList" class="space-y-2 mb-6 max-h-48 overflow-y-auto pr-2"></div>
+        <div id="bookingFormContainer" class="hidden">
+             <hr class="mb-4">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">ลงชื่อจองห้องพัก</h3>
+            <form id="bookingForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-600">รหัสพนักงาน</label>
+                    <input type="text" id="employeeId" class="mt-1 w-full border-gray-300 px-3 py-2 rounded-md shadow-sm" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-600">ชื่อ-นามสกุล</label>
+                    <input type="text" id="fullName" class="mt-1 w-full border-gray-300 px-3 py-2 rounded-md shadow-sm" required>
+                </div>
+                <button type="submit" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-lg">ยืนยันการจอง</button>
+            </form>
+        </div>
+    </div>
 </div>
 
 <script>
-    // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+    // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyDDY7uIvV8rh7MJITAibsiOMZcttTaCMXo",
-  authDomain: "kusuma-booking.firebaseapp.com",
-  databaseURL: "https://kusuma-booking-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "kusuma-booking",
-  storageBucket: "kusuma-booking.firebasestorage.app",
-  messagingSenderId: "237116351910",
-  appId: "1:237116351910:web:ace9e82ab57c76bdf95b67",
-  measurementId: "G-Z510RRPZG6"
+  apiKey: "AIzaSyDDY7uIvV8rh7MJITAibsiOMZcttTaCMXo",
+  authDomain: "kusuma-booking.firebaseapp.com",
+  databaseURL: "https://kusuma-booking-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "kusuma-booking",
+  storageBucket: "kusuma-booking.firebasestorage.app",
+  messagingSenderId: "237116351910",
+  appId: "1:237116351910:web:ace9e82ab57c76bdf95b67",
+  measurementId: "G-Z510RRPZG6"
 };
 
-    // Initialize Firebase
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-    const roomsRef = db.ref("rooms");
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const roomsRef = db.ref("rooms");
 
-    let currentBookings = {};
-    let currentRoomName = null;
+    let currentBookings = {};
+    let currentRoomName = null;
 
-    const roomsData = [
-        {name:"บ้านเกาะใหญ่-ห้อง1", capacity:2, gender:"female"}, {name:"บ้านเกาะใหญ่-ห้อง2", capacity:4, gender:"female"}, {name:"บ้านเกาะใหญ่-ห้อง3", capacity:3, gender:"female"},
-        {name:"บ้านอิงแก่ง-ห้อง1", capacity:3, gender:"female"}, {name:"บ้านอิงแก่ง-ห้อง2", capacity:3, gender:"female"}, {name:"บ้านอิงแก่ง-ห้อง3", capacity:3, gender:"female"},
-        {name:"บ้านชมธาร-ห้อง1", capacity:3, gender:"female"}, {name:"บ้านชมธาร-ห้อง2", capacity:3, gender:"female"}, {name:"บ้านชมธาร-ห้อง3", capacity:3, gender:"female"},
-        {name:"บ้านชมแก่ง", capacity:3, gender:"female"}, {name:"บ้านเนินทราย", capacity:2, gender:"male"},
-        {name:"A1", capacity:3, gender:"male"}, {name:"A2", capacity:3, gender:"male"}, {name:"A3", capacity:3, gender:"male"}, {name:"A4", capacity:3, gender:"male"},
-        {name:"A5", capacity:3, gender:"male"}, {name:"A6", capacity:3, gender:"male"}, {name:"A7", capacity:3, gender:"male"},
-        {name:"B10", capacity:2, gender:"male"}, {name:"B11", capacity:2, gender:"male"}, {name:"B12", capacity:2, gender:"male"},
-        {name:"B13", capacity:2, gender:"male"}, {name:"B14", capacity:2, gender:"male"},
-        {name:"บ้านเกาะเล็ก-ห้อง1", capacity:3, gender:"male"}, {name:"บ้านเกาะเล็ก-ห้อง2", capacity:3, gender:"male"},
-    ];
-    
-    const femaleRoomsContainer = document.getElementById("femaleRoomsContainer");
-    const maleRoomsContainer = document.getElementById("maleRoomsContainer");
-    const modal = document.getElementById("detailsModal");
+    const roomsData = [
+        {name:"บ้านเกาะใหญ่-ห้อง1", capacity:2, gender:"female"}, {name:"บ้านเกาะใหญ่-ห้อง2", capacity:4, gender:"female"}, {name:"บ้านเกาะใหญ่-ห้อง3", capacity:3, gender:"female"},
+        {name:"บ้านอิงแก่ง-ห้อง1", capacity:3, gender:"female"}, {name:"บ้านอิงแก่ง-ห้อง2", capacity:3, gender:"female"}, {name:"บ้านอิงแก่ง-ห้อง3", capacity:3, gender:"female"},
+        {name:"บ้านชมธาร-ห้อง1", capacity:3, gender:"female"}, {name:"บ้านชมธาร-ห้อง2", capacity:3, gender:"female"}, {name:"บ้านชมธาร-ห้อง3", capacity:3, gender:"female"},
+        {name:"บ้านชมแก่ง", capacity:3, gender:"female"}, {name:"บ้านเนินทราย", capacity:2, gender:"male"},
+        {name:"A1", capacity:3, gender:"male"}, {name:"A2", capacity:3, gender:"male"}, {name:"A3", capacity:3, gender:"male"}, {name:"A4", capacity:3, gender:"male"},
+        {name:"A5", capacity:3, gender:"male"}, {name:"A6", capacity:3, gender:"male"}, {name:"A7", capacity:3, gender:"male"},
+        {name:"B10", capacity:2, gender:"male"}, {name:"B11", capacity:2, gender:"male"}, {name:"B12", capacity:2, gender:"male"},
+        {name:"B13", capacity:2, gender:"male"}, {name:"B14", capacity:2, gender:"male"},
+        {name:"บ้านเกาะเล็ก-ห้อง1", capacity:3, gender:"male"}, {name:"บ้านเกาะเล็ก-ห้อง2", capacity:3, gender:"male"},
+    ];
+    
+    const femaleRoomsContainer = document.getElementById("femaleRoomsContainer");
+    const maleRoomsContainer = document.getElementById("maleRoomsContainer");
+    const modal = document.getElementById("detailsModal");
 
-    roomsRef.on("value", (snapshot) => {
-        currentBookings = snapshot.val() || {};
-        renderRooms();
-    });
+    roomsRef.on("value", (snapshot) => {
+        currentBookings = snapshot.val() || {};
+        renderRooms();
+    });
 
-    function renderRooms() {
-        femaleRoomsContainer.innerHTML = "";
-        maleRoomsContainer.innerHTML = "";
-        
-        roomsData.forEach(room => {
-            const bookingsInRoom = currentBookings[room.name] || {};
-            const activeBookings = Object.values(bookingsInRoom).filter(b => b.status === 'active');
-            const bookingsCount = activeBookings.length;
-            
-            const div = document.createElement("div");
-            div.className = "room-card";
-            div.dataset.name = room.name;
+    function renderRooms() {
+        femaleRoomsContainer.innerHTML = "";
+        maleRoomsContainer.innerHTML = "";
+        
+        roomsData.forEach(room => {
+            const bookingsInRoom = currentBookings[room.name] || {};
+            const activeBookings = Object.values(bookingsInRoom).filter(b => b.status === 'active');
+            const bookingsCount = activeBookings.length;
+            
+            const div = document.createElement("div");
+            div.className = "room-card";
+            div.dataset.name = room.name;
 
-            let statusClass = bookingsCount >= room.capacity ? 'full' : (bookingsCount > 0 ? 'partial' : 'available');
-            div.classList.add(statusClass);
-            
-            div.innerHTML = `<h3 class="font-bold text-lg">${room.name}</h3><p class="font-medium">${bookingsCount} / ${room.capacity} คน</p>`;
-            div.addEventListener("click", () => openDetailsModal(room.name));
+            let statusClass = bookingsCount >= room.capacity ? 'full' : (bookingsCount > 0 ? 'partial' : 'available');
+            div.classList.add(statusClass);
+            
+            div.innerHTML = `<h3 class="font-bold text-lg">${room.name}</h3><p class="font-medium">${bookingsCount} / ${room.capacity} คน</p>`;
+            div.addEventListener("click", () => openDetailsModal(room.name));
 
-            if (room.gender === "female") {
-                femaleRoomsContainer.appendChild(div);
-            } else {
-                maleRoomsContainer.appendChild(div);
-            }
-        });
-    }
+            if (room.gender === "female") {
+                femaleRoomsContainer.appendChild(div);
+            } else {
+                maleRoomsContainer.appendChild(div);
+            }
+        });
+    }
 
-    function openDetailsModal(roomName) {
-        currentRoomName = roomName;
-        const room = roomsData.find(r => r.name === roomName);
-        const bookingsInRoom = currentBookings[roomName] || {};
-        const activeBookings = Object.values(bookingsInRoom).filter(b => b.status === 'active');
-        const bookingsCount = activeBookings.length;
-        
-        document.getElementById("modalTitle").innerText = room.name;
-        document.getElementById("modalStatus").innerText = `รายชื่อผู้เข้าพัก (${bookingsCount}/${room.capacity})`;
-        document.getElementById("bookingFormContainer").classList.toggle("hidden", bookingsCount >= room.capacity);
+    function openDetailsModal(roomName) {
+        currentRoomName = roomName;
+        const room = roomsData.find(r => r.name === roomName);
+        const bookingsInRoom = currentBookings[roomName] || {};
+        const activeBookings = Object.values(bookingsInRoom).filter(b => b.status === 'active');
+        const bookingsCount = activeBookings.length;
+        
+        document.getElementById("modalTitle").innerText = room.name;
+        document.getElementById("modalStatus").innerText = `รายชื่อผู้เข้าพัก (${bookingsCount}/${room.capacity})`;
+        document.getElementById("bookingFormContainer").classList.toggle("hidden", bookingsCount >= room.capacity);
 
-        const bookedListEl = document.getElementById("bookedList");
-        bookedListEl.innerHTML = "";
+        const bookedListEl = document.getElementById("bookedList");
+        bookedListEl.innerHTML = "";
 
-        if (bookingsCount > 0) {
-            Object.entries(bookingsInRoom).forEach(([key, person]) => {
-                if (person.status === 'active') {
-                    const li = document.createElement("div");
-                    li.className = "flex justify-between items-center p-2 bg-gray-100 rounded";
-                    const bookingDate = new Date(person.bookingTimestamp).toLocaleString('th-TH');
-                    li.innerHTML = `<span>${person.fullName} <em class="text-xs text-gray-500">(${bookingDate})</em></span>`;
-                    const cancelBtn = document.createElement("button");
-                    cancelBtn.innerText = "ยกเลิก";
-                    cancelBtn.className = "cancel-btn text-xs py-1 px-2 rounded-md";
-                    cancelBtn.onclick = () => cancelBooking(roomName, key, person.employeeId);
-                    li.appendChild(cancelBtn);
-                    bookedListEl.appendChild(li);
-                }
-            });
-        }
-        modal.classList.remove("hidden");
-    }
+        if (bookingsCount > 0) {
+            Object.entries(bookingsInRoom).forEach(([key, person]) => {
+                if (person.status === 'active') {
+                    const li = document.createElement("div");
+                    li.className = "flex justify-between items-center p-2 bg-gray-100 rounded";
+                    const bookingDate = new Date(person.bookingTimestamp).toLocaleString('th-TH');
+                    li.innerHTML = `<span>${person.fullName} <em class="text-xs text-gray-500">(${bookingDate})</em></span>`;
+                    const cancelBtn = document.createElement("button");
+                    cancelBtn.innerText = "ยกเลิก";
+                    cancelBtn.className = "cancel-btn text-xs py-1 px-2 rounded-md";
+                    cancelBtn.onclick = () => cancelBooking(roomName, key, person.employeeId);
+                    li.appendChild(cancelBtn);
+                    bookedListEl.appendChild(li);
+                }
+            });
+        }
+        modal.classList.remove("hidden");
+    }
 
-    document.getElementById('bookingForm').addEventListener("submit", (e) => {
-        e.preventDefault();
-        const employeeId = document.getElementById('employeeId').value.trim();
-        const fullName = document.getElementById('fullName').value.trim();
-        if (!employeeId || !fullName) return alert("กรุณากรอกข้อมูลให้ครบ");
-        
-        let alreadyBooked = false;
-        for (const roomName in currentBookings) {
-            const activeBookings = Object.values(currentBookings[roomName]).filter(b => b.status === 'active');
-            if (activeBookings.some(p => p.employeeId === employeeId)) {
-                alreadyBooked = true;
-                break;
-            }
-        }
+    document.getElementById('bookingForm').addEventListener("submit", (e) => {
+        e.preventDefault();
+        const employeeId = document.getElementById('employeeId').value.trim();
+        const fullName = document.getElementById('fullName').value.trim();
+        if (!employeeId || !fullName) return alert("กรุณากรอกข้อมูลให้ครบ");
+        
+        let alreadyBooked = false;
+        for (const roomName in currentBookings) {
+            const activeBookings = Object.values(currentBookings[roomName]).filter(b => b.status === 'active');
+            if (activeBookings.some(p => p.employeeId === employeeId)) {
+                alreadyBooked = true;
+                break;
+            }
+        }
 
-        if (alreadyBooked) {
-            alert("รหัสพนักงานนี้ได้ทำการจองไปแล้ว!");
-            return;
-        }
+        if (alreadyBooked) {
+            alert("รหัสพนักงานนี้ได้ทำการจองไปแล้ว!");
+            return;
+        }
 
-        const newBooking = {
-            employeeId: employeeId,
-            fullName: fullName,
-            status: 'active',
-            bookingTimestamp: firebase.database.ServerValue.TIMESTAMP
-        };
+        const newBooking = {
+            employeeId: employeeId,
+            fullName: fullName,
+            status: 'active',
+            bookingTimestamp: firebase.database.ServerValue.TIMESTAMP
+        };
 
-        db.ref(`rooms/${currentRoomName}`).push(newBooking)
-            .then(() => {
-                alert("จองห้องสำเร็จ!");
-                closeModal();
-                document.getElementById('bookingForm').reset();
-            });
-    });
+        db.ref(`rooms/${currentRoomName}`).push(newBooking)
+            .then(() => {
+                alert("จองห้องสำเร็จ!");
+                closeModal();
+                document.getElementById('bookingForm').reset();
+            });
+    });
 
-    function cancelBooking(roomName, bookingKey, bookingEmployeeId) {
-        const inputId = prompt("เพื่อยืนยันการยกเลิก, กรุณากรอกรหัสพนักงานของคุณ:");
-        if (inputId && inputId.trim() === bookingEmployeeId) {
-            const updates = {
-                status: 'canceled',
-                canceledBy: inputId.trim(),
-                cancellationTimestamp: firebase.database.ServerValue.TIMESTAMP
-            };
-            db.ref(`rooms/${roomName}/${bookingKey}`).update(updates)
-                .then(() => {
-                    alert("ยกเลิกการจองสำเร็จ");
-                    closeModal();
-                });
-        } else if (inputId !== null) {
-            alert("รหัสพนักงานไม่ตรงกัน");
-        }
-    }
+    function cancelBooking(roomName, bookingKey, bookingEmployeeId) {
+        const inputId = prompt("เพื่อยืนยันการยกเลิก, กรุณากรอกรหัสพนักงานของคุณ:");
+        if (inputId && inputId.trim() === bookingEmployeeId) {
+            const updates = {
+                status: 'canceled',
+                canceledBy: inputId.trim(),
+                cancellationTimestamp: firebase.database.ServerValue.TIMESTAMP
+            };
+            db.ref(`rooms/${roomName}/${bookingKey}`).update(updates)
+                .then(() => {
+                    alert("ยกเลิกการจองสำเร็จ");
+                    closeModal();
+                });
+        } else if (inputId !== null) {
+            alert("รหัสพนักงานไม่ตรงกัน");
+        }
+    }
 
-    function closeModal() { modal.classList.add("hidden"); }
+    function closeModal() { modal.classList.add("hidden"); }
 
-    const checkStatusBtn = document.getElementById('checkStatusBtn');
-    checkStatusBtn.addEventListener('click', () => {
-        const inputId = prompt("กรุณากรอกรหัสพนักงานเพื่อตรวจสอบสถานะการจอง:");
-        if (!inputId || inputId.trim() === "") { return; }
+    const checkStatusBtn = document.getElementById('checkStatusBtn');
+    checkStatusBtn.addEventListener('click', () => {
+        const inputId = prompt("กรุณากรอกรหัสพนักงานเพื่อตรวจสอบสถานะการจอง:");
+        if (!inputId || inputId.trim() === "") { return; }
 
-        let bookingFound = false;
-        for (const roomName in currentBookings) {
-            for (const key in currentBookings[roomName]) {
-                const booking = currentBookings[roomName][key];
-                if (booking.employeeId === inputId.trim() && booking.status === 'active') {
-                    const bookingDate = new Date(booking.bookingTimestamp).toLocaleString('th-TH');
-                    alert(`พบข้อมูลการจองของคุณ:\n\nห้อง: ${roomName}\nชื่อ-นามสกุล: ${booking.fullName}\nเวลาที่จอง: ${bookingDate}`);
-                    bookingFound = true;
-                    break; 
-                }
-            }
-            if (bookingFound) { break; }
-        }
+        let bookingFound = false;
+        for (const roomName in currentBookings) {
+            for (const key in currentBookings[roomName]) {
+                const booking = currentBookings[roomName][key];
+                if (booking.employeeId === inputId.trim() && booking.status === 'active') {
+                    const bookingDate = new Date(booking.bookingTimestamp).toLocaleString('th-TH');
+                    alert(`พบข้อมูลการจองของคุณ:\n\nห้อง: ${roomName}\nชื่อ-นามสกุล: ${booking.fullName}\nเวลาที่จอง: ${bookingDate}`);
+                    bookingFound = true;
+                    break; 
+                }
+            }
+            if (bookingFound) { break; }
+        }
 
-        if (!bookingFound) {
-            alert("ไม่พบข้อมูลการจองสำหรับรหัสพนักงานนี้");
-        }
-    });
+        if (!bookingFound) {
+            alert("ไม่พบข้อมูลการจองสำหรับรหัสพนักงานนี้");
+        }
+    });
 
     // โค้ดสำหรับฟังก์ชันปริ้นท์ทั้งหมด
     document.getElementById('printAllBtn').addEventListener('click', () => {
@@ -267,23 +274,30 @@ const firebaseConfig = {
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <title>รายงานการจองห้องพัก - ไร่กุสุมา 2568</title>
                 <style>
-                    body { font-family: 'Sarabun', sans-serif; padding: 20px; }
+                    body { font-family: 'Sarabun', sans-serif; padding: 20px; color: #333; }
                     h1 { text-align: center; color: #4A5568; margin-bottom: 20px; }
-                    .room-section { margin-bottom: 25px; border-bottom: 2px solid #E2E8F0; padding-bottom: 15px; }
+                    .room-section { margin-bottom: 25px; border-bottom: 1px solid #E2E8F0; padding-bottom: 15px; }
                     .room-title { font-size: 1.5rem; font-weight: bold; margin-bottom: 10px; color: #3182CE; }
                     .booking-list { list-style-type: none; padding-left: 0; }
-                    .booking-item { padding: 8px 0; border-bottom: 1px dashed #CBD5E0; }
+                    .booking-item { padding: 8px 0; border-bottom: 1px dashed #E2E8F0; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; }
+                    .booking-item > strong { flex-basis: 100%; margin-bottom: 4px; }
+                    .booking-item .info { font-size: 0.85rem; color: #718096; margin-right: 15px; }
                     .booking-item:last-child { border-bottom: none; }
                     .info { font-size: 0.9rem; color: #718096; }
                     .print-header { text-align: center; margin-bottom: 2rem; }
-                    .print-header h1 { font-size: 2rem; }
+                    .print-header h1 { font-size: 2rem; margin-bottom: 0.5rem; }
                     .print-header p { font-size: 1rem; color: #718096; }
+                    
+                    @media print {
+                        body { margin: 0; padding: 0; }
+                        .room-section { page-break-inside: avoid; } /* Keep room sections together */
+                    }
                 </style>
             </head>
             <body>
                 <div class="print-header">
                     <h1>รายงานการจองห้องพักทั้งหมด</h1>
-                    <p>ณ วันที่ ${new Date().toLocaleDateString('th-TH')}</p>
+                    <p> ณ วันที่ ${new Date().toLocaleDateString('th-TH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
                 </div>
         `;
 
@@ -304,9 +318,11 @@ const firebaseConfig = {
                 const bookingDate = new Date(person.bookingTimestamp).toLocaleString('th-TH');
                 printContent += `
                     <li class="booking-item">
-                        <strong>ชื่อ:</strong> ${person.fullName} <br>
-                        <span class="info">รหัสพนักงาน: ${person.employeeId}</span><br>
-                        <span class="info">เวลาที่จอง: ${bookingDate}</span>
+                        <strong>${person.fullName}</strong>
+                        <div class="flex items-center">
+                            <span class="info">รหัสพนักงาน: ${person.employeeId}</span>
+                            <span class="info ml-4">เวลาที่จอง: ${bookingDate}</span>
+                        </div>
                     </li>
                 `;
             });
